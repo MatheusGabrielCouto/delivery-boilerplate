@@ -1,0 +1,139 @@
+{
+  "theme": {
+    "primary": "#E53935",
+    "primaryHover": "#C62828",
+    "secondary": "#FFC107",
+    "secondarySoft": "#FFF8E1",
+    "background": "#FFFFFF",
+    "foreground": "#212121",
+    "foregroundMuted": "#616161",
+    "whatsapp": "#25D366"
+  },
+  "restaurant": {
+    "name": "Meu Restaurante",
+    "description": "Cardápio online - Peça e receba em casa",
+    "whatsapp": "5569999108812",
+    "icon": "/logo.svg"
+  },
+  "footer": {
+    "copyright": "Todos os direitos reservados"
+  },
+  "categories": [
+    {
+      "id": "bebidas",
+      "name": "Bebidas",
+      "order": 4
+    },
+    {
+      "id": "lanches",
+      "name": "Lanches",
+      "order": 1
+    },
+    {
+      "id": "refeicoes",
+      "name": "Refeições",
+      "order": 2
+    },
+    {
+      "id": "sobremesas",
+      "name": "Sobremesas",
+      "order": 3
+    }
+  ],
+  "products": [
+    {
+      "id": "coca-350",
+      "name": "Coca-Cola 350ml",
+      "description": "Refrigerante gelado",
+      "price": 5.00,
+      "image": "/placeholder.svg",
+      "categoryId": "bebidas",
+      "available": true
+    },
+    {
+      "id": "suco-laranja",
+      "name": "Suco de Laranja",
+      "description": "Suco natural 500ml",
+      "price": 8.00,
+      "image": "/placeholder.svg",
+      "categoryId": "bebidas",
+      "available": true
+    },
+    {
+      "id": "agua-500",
+      "name": "Água Mineral 500ml",
+      "description": "Água gelada",
+      "price": 3.00,
+      "image": "/placeholder.svg",
+      "categoryId": "bebidas",
+      "available": true
+    },
+    {
+      "id": "x-burger",
+      "name": "X-Burger",
+      "description": "Hambúrguer artesanal, queijo, alface e tomate",
+      "price": 18.00,
+      "image": "/placeholder.svg",
+      "images": [
+        "/products/x-burger/01.webp",
+        "/products/x-burger/02.jpg"
+      ],
+      "categoryId": "lanches",
+      "available": true
+    },
+    {
+      "id": "x-bacon",
+      "name": "X-Bacon",
+      "description": "Hambúrguer, bacon crocante, queijo e molho especial",
+      "price": 22.00,
+      "image": "/products/x-bacon/01.jpg",
+      "categoryId": "lanches",
+      "available": true
+    },
+    {
+      "id": "batata-frita",
+      "name": "Batata Frita",
+      "description": "Porção de batatas fritas crocantes",
+      "price": 12.00,
+      "image": "/placeholder.svg",
+      "categoryId": "lanches",
+      "available": true
+    },
+    {
+      "id": "prato-feito",
+      "name": "Prato Feito",
+      "description": "Arroz, feijão, salada e carne ao molho",
+      "price": 25.00,
+      "image": "/placeholder.svg",
+      "categoryId": "refeicoes",
+      "available": true
+    },
+    {
+      "id": "frango-grelhado",
+      "name": "Frango Grelhado",
+      "description": "Peito de frango grelhado com legumes",
+      "price": 28.00,
+      "image": "/placeholder.svg",
+      "categoryId": "refeicoes",
+      "available": true
+    },
+    {
+      "id": "mousse-chocolate",
+      "name": "Mousse de Chocolate",
+      "description": "Mousse cremoso de chocolate belga",
+      "price": 10.00,
+      "image": "/placeholder.svg",
+      "categoryId": "sobremesas",
+      "available": true
+    },
+    {
+      "id": "pudim",
+      "name": "Pudim",
+      "description": "Pudim de leite condensado tradicional",
+      "price": 9.00,
+      "image": "/placeholder.svg",
+      "categoryId": "sobremesas",
+      "available": true
+    }
+  ]
+}

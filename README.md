@@ -1,24 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cardápio Online - Boilerplate
 
-## Getting Started
+Site de pedidos online para restaurantes. Cadastre produtos e categorias de forma estática via JSON.
 
-First, run the development server:
+## Início rápido
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Cadastro de produtos
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Edite o arquivo `data/products.json` para cadastrar:
+
+- **restaurant**: Nome e descrição do restaurante
+- **categories**: Categorias do cardápio (Bebidas, Lanches, etc.)
+- **products**: Produtos com nome, descrição, preço, imagem e categoria
+
+Veja a documentação completa em `data/README.md`.
+
+### Exemplo de produto
+
+```json
+{
+  "id": "x-burger",
+  "name": "X-Burger",
+  "description": "Hambúrguer artesanal com queijo",
+  "price": 18.00,
+  "image": "/products/xburger.png",
+  "categoryId": "lanches",
+  "available": true
+}
+```
+
+Imagens: coloque em `public/products/` e use o caminho `/products/nome.png` no JSON.
 
 ## Learn More
 
