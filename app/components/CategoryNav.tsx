@@ -45,7 +45,7 @@ export function CategoryNav({ categories }: CategoryNavProps) {
   };
 
   return (
-    <nav className="sticky top-[52px] z-10 -mx-4 border-b border-neutral-200 bg-white px-4 py-2.5 sm:top-[72px] sm:mx-0 sm:px-0">
+    <nav className="sticky top-[52px] z-10 -mx-4 border-b border-neutral-200 bg-white px-4 pt-6 pb-2.5 sm:top-[72px] sm:mx-0 sm:px-0">
       <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
         {sorted.map((cat) => {
           const isActive = activeId === cat.id;
