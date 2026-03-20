@@ -46,7 +46,7 @@
       "name": "Coca-Cola 350ml",
       "description": "Refrigerante gelado",
       "price": 5.00,
-      "image": "/placeholder.svg",
+      "image": "/products/coca-cola.avif",
       "categoryId": "bebidas",
       "available": true
     },
@@ -55,7 +55,7 @@
       "name": "Suco de Laranja",
       "description": "Suco natural 500ml",
       "price": 8.00,
-      "image": "/placeholder.svg",
+      "image": "/products/suco.avif",
       "categoryId": "bebidas",
       "available": true
     },
@@ -64,7 +64,7 @@
       "name": "Água Mineral 500ml",
       "description": "Água gelada",
       "price": 3.00,
-      "image": "/placeholder.svg",
+      "image": "/products/agua.jpeg",
       "categoryId": "bebidas",
       "available": true
     },
@@ -95,7 +95,7 @@
       "name": "Batata Frita",
       "description": "Porção de batatas fritas crocantes",
       "price": 12.00,
-      "image": "/placeholder.svg",
+      "image": "/products/batata-frita/01.avif",
       "categoryId": "lanches",
       "available": true
     },
@@ -104,7 +104,7 @@
       "name": "Prato Feito",
       "description": "Arroz, feijão, salada e carne ao molho",
       "price": 25.00,
-      "image": "/placeholder.svg",
+      "image": "/products/prato-feito.jpg",
       "categoryId": "refeicoes",
       "available": true
     },
@@ -113,7 +113,7 @@
       "name": "Frango Grelhado",
       "description": "Peito de frango grelhado com legumes",
       "price": 28.00,
-      "image": "/placeholder.svg",
+      "image": "/products/frango.jpg",
       "categoryId": "refeicoes",
       "available": true
     },
@@ -122,7 +122,7 @@
       "name": "Mousse de Chocolate",
       "description": "Mousse cremoso de chocolate belga",
       "price": 10.00,
-      "image": "/placeholder.svg",
+      "image": "/products/musse.jpeg",
       "categoryId": "sobremesas",
       "available": true
     },
@@ -131,7 +131,7 @@
       "name": "Pudim",
       "description": "Pudim de leite condensado tradicional",
       "price": 9.00,
-      "image": "/placeholder.svg",
+      "image": "/products/pudim.avif",
       "categoryId": "sobremesas",
       "available": true
     }
