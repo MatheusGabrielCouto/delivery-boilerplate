@@ -284,9 +284,8 @@ export function Cart({
               onClick={() => setShowAddressForm(true)}
               whileTap={{ scale: 0.98 }}
               whileHover={{ scale: 1.01 }}
-              className={`flex w-full items-center justify-center gap-2 font-semibold text-white transition-all ${isDrawer ? "rounded-2xl bg-[var(--theme-whatsapp)] py-4 shadow-lg shadow-green-500/25" : "rounded-xl bg-[var(--theme-whatsapp)] py-3.5 shadow-md shadow-green-500/20 hover:shadow-lg hover:shadow-green-500/25"}`}
+              className={`flex w-full items-center justify-center gap-2 text-sm font-semibold text-white transition-all ${isDrawer ? "rounded-xl bg-[var(--theme-whatsapp)] py-3 shadow-md shadow-green-500/20" : "rounded-xl bg-[var(--theme-whatsapp)] py-3.5 shadow-md shadow-green-500/20 hover:shadow-lg hover:shadow-green-500/25"}`}
             >
-              <FiMessageCircle className="h-5 w-5" />
               Finalizar pedido
             </motion.button>
           </div>
@@ -464,7 +463,7 @@ export function Cart({
                   </button>
                   <button
                     type="submit"
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[var(--theme-whatsapp)] px-3 py-2.5 text-sm font-semibold text-white shadow-md shadow-green-500/20 transition-all hover:shadow-green-500/25 active:scale-[0.98]"
+                    className="flex text-sm flex-1 items-center justify-center gap-1.5 rounded-lg bg-[var(--theme-whatsapp)] px-3 py-2.5 font-semibold text-white shadow-md shadow-green-500/20 transition-all hover:shadow-green-500/25 active:scale-[0.98]"
                   >
                     <FiMessageCircle className="h-4 w-4" />
                     Enviar no WhatsApp
