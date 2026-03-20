@@ -454,19 +454,19 @@ export function Cart({
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-3 pt-2">
+                <div className="flex gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => setShowAddressForm(false)}
-                    className="flex-1 rounded-xl border border-neutral-200 px-4 py-3.5 font-semibold text-neutral-600 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
+                    className="flex-1 rounded-lg border border-neutral-200 px-3 py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 active:bg-neutral-100"
                   >
                     Voltar
                   </button>
                   <button
                     type="submit"
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--theme-whatsapp)] px-4 py-3.5 font-semibold text-white shadow-lg shadow-green-500/25 transition-all hover:shadow-green-500/30 active:scale-[0.98]"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[var(--theme-whatsapp)] px-3 py-2.5 text-sm font-semibold text-white shadow-md shadow-green-500/20 transition-all hover:shadow-green-500/25 active:scale-[0.98]"
                   >
-                    <FiMessageCircle className="h-5 w-5" />
+                    <FiMessageCircle className="h-4 w-4" />
                     Enviar no WhatsApp
                   </button>
                 </div>

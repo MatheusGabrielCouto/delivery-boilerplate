@@ -11,18 +11,19 @@ interface ProductCardProps {
   onAdd: (product: Product) => void;
   onDetail?: (product: Product) => void;
   index?: number;
+  priority?: boolean;
 }
 
-export function ProductCard({ product, onAdd, onDetail, index = 0 }: ProductCardProps) {
+export function ProductCard({ product, onAdd, onDetail, index = 0, priority = false }: ProductCardProps) {
   return (
     <motion.article
       role={onDetail ? "button" : undefined}
       tabIndex={onDetail ? 0 : undefined}
       onClick={onDetail ? () => onDetail(product) : undefined}
       onKeyDown={onDetail ? (e) => e.key === "Enter" && onDetail(product) : undefined}
-      initial={{ opacity: 0, y: 16 }}
+      initial={priority ? false : { opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
+      transition={{ duration: 0.3, delay: priority ? 0 : index * 0.03 }}
       className={`group flex flex-col overflow-hidden rounded-2xl border border-[var(--theme-secondary-soft)] bg-white shadow-sm transition-shadow hover:shadow-md hover:border-[var(--theme-secondary)] ${onDetail ? "cursor-pointer" : ""}`}
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-[var(--theme-secondary-soft)]">
@@ -30,6 +31,8 @@ export function ProductCard({ product, onAdd, onDetail, index = 0 }: ProductCard
           src={getProductImages(product)[0]}
           alt={product.name}
           fill
+          priority={priority}
+          fetchPriority={priority ? "high" : undefined}
           className="object-cover transition-transform duration-300 group-hover:scale-105"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />

@@ -1,15 +1,19 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import { getMenuData, getCategoriesWithProducts } from "@/app/lib/products";
 import { CategorySection } from "@/app/components/CategorySection";
 import { CategoryNav } from "@/app/components/CategoryNav";
 import { Cart } from "@/app/components/Cart";
 import { CartButton } from "@/app/components/CartButton";
 import { Footer } from "@/app/components/Footer";
-import { ProductDetail } from "@/app/components/ProductDetail";
 import type { CartItem, Product } from "@/app/types";
+
+const ProductDetail = dynamic(
+  () => import("@/app/components/ProductDetail").then((m) => ({ default: m.ProductDetail })),
+  { ssr: false }
+);
 
 export default function Home() {
   const menuData = useMemo(() => getMenuData(), []);
@@ -63,13 +67,22 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--theme-background)]">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-[var(--theme-primary)] focus:px-4 focus:py-2 focus:text-white focus:outline-none"
+      >
+        Pular para o conteúdo
+      </a>
       <header className="sticky top-0 z-20 shrink-0 border-b border-neutral-200 bg-neutral-50/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
           {menuData.restaurant.icon && (
             <img
               src={menuData.restaurant.icon}
               alt=""
+              width={56}
+              height={56}
               className="h-10 w-10 shrink-0 rounded-lg object-cover sm:h-14 sm:w-14 sm:rounded-xl"
+              fetchPriority="high"
             />
           )}
           <div className="min-w-0 flex-1">
@@ -83,16 +96,10 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-4 sm:px-6 sm:py-8">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <CategoryNav categories={menuData.categories} />
-        </motion.div>
+      <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-4 py-3 sm:px-6 sm:py-4">
+        <CategoryNav categories={categorySections.map(({ category }) => category)} />
 
-        <div className="flex flex-col gap-12 pb-24 lg:flex-row lg:gap-8 lg:pb-6">
+        <div className="flex flex-col gap-12 pb-32 lg:flex-row lg:gap-8 lg:pb-12">
           <section className="min-w-0 flex-1 space-y-12">
             {categorySections.map(({ category, products }, i) => (
               <CategorySection

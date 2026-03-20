@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { Category } from "@/app/types";
 
@@ -10,18 +10,20 @@ interface CategoryNavProps {
 
 export function CategoryNav({ categories }: CategoryNavProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const scrollTargetRef = useRef<string | null>(null);
   const sorted = [...categories].sort((a, b) => a.order - b.order);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
+        if (scrollTargetRef.current) return;
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setActiveId(entry.target.id);
           }
         });
       },
-      { rootMargin: "-20% 0px -70% 0px", threshold: 0 }
+      { rootMargin: "-15% 0px -60% 0px", threshold: 0 }
     );
 
     sorted.forEach(({ id }) => {
@@ -32,12 +34,18 @@ export function CategoryNav({ categories }: CategoryNavProps) {
   }, [sorted]);
 
   const scrollToCategory = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    const el = document.getElementById(id);
+    if (!el) return;
     setActiveId(id);
+    scrollTargetRef.current = id;
+    el.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+    setTimeout(() => {
+      scrollTargetRef.current = null;
+    }, 800);
   };
 
   return (
-    <nav className="sticky top-[52px] z-10 -mx-4 border-b border-neutral-200 bg-white px-4 py-4 sm:top-[72px] sm:mx-0 sm:px-0">
+    <nav className="sticky top-[52px] z-10 -mx-4 border-b border-neutral-200 bg-white px-4 py-2.5 sm:top-[72px] sm:mx-0 sm:px-0">
       <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
         {sorted.map((cat) => {
           const isActive = activeId === cat.id;

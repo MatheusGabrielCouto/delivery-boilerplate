@@ -12,6 +12,8 @@ interface CategorySectionProps {
   index: number;
 }
 
+const PRIORITY_PRODUCT_COUNT = 6;
+
 export function CategorySection({
   category,
   products,
@@ -19,13 +21,14 @@ export function CategorySection({
   onDetail,
   index,
 }: CategorySectionProps) {
+  const isFirstSection = index === 0;
   return (
     <motion.section
       id={category.id}
-      initial={{ opacity: 0, y: 16 }}
+      initial={isFirstSection ? false : { opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      className="scroll-mt-28 sm:scroll-mt-32"
+      transition={{ duration: 0.3, delay: isFirstSection ? 0 : index * 0.03 }}
+      className="scroll-mt-40 sm:scroll-mt-48"
     >
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-neutral-900 sm:text-xl">
@@ -44,6 +47,7 @@ export function CategorySection({
             onAdd={onAdd}
             onDetail={onDetail}
             index={i}
+            priority={isFirstSection && i < PRIORITY_PRODUCT_COUNT}
           />
         ))}
       </div>
