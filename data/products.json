@@ -13,7 +13,8 @@
     "name": "Meu Restaurante",
     "description": "Cardápio online - Peça e receba em casa",
     "whatsapp": "5569999108812",
-    "icon": "/logo.svg"
+    "icon": "/logo.svg",
+    "deliveryFee": 5.00
   },
   "footer": {
     "copyright": "Todos os direitos reservados"

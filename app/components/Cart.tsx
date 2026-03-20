@@ -39,6 +39,7 @@ interface CartProps {
   items: CartItem[];
   restaurantName: string;
   whatsapp: string;
+  deliveryFee?: number;
   onRemove: (productId: string) => void;
   onUpdateQuantity: (productId: string, delta: number) => void;
   isOpen?: boolean;
@@ -48,10 +49,12 @@ interface CartProps {
 
 function buildWhatsAppMessage(
   items: CartItem[],
-  total: number,
+  productsTotal: number,
   restaurantName: string,
-  address?: AddressForm
+  address?: AddressForm,
+  deliveryFee?: number
 ): string {
+  const total = productsTotal + (deliveryFee ?? 0);
   const lines = [
     `Olá! Gostaria de fazer um pedido no *${restaurantName}*`,
     "",
@@ -60,9 +63,11 @@ function buildWhatsAppMessage(
       (i) =>
         `• ${i.product.name} ${i.quantity}x - R$ ${(i.product.price * i.quantity).toFixed(2).replace(".", ",")}`
     ),
-    "",
-    `*Total: R$ ${total.toFixed(2).replace(".", ",")}*`,
   ];
+  if (deliveryFee != null && deliveryFee > 0) {
+    lines.push("", `*Taxa de entrega: R$ ${deliveryFee.toFixed(2).replace(".", ",")}*`);
+  }
+  lines.push("", `*Total: R$ ${total.toFixed(2).replace(".", ",")}*`);
   if (address?.street && address?.number && address?.neighborhood && address?.city) {
     const addr = [
       address.cep ? `CEP ${address.cep.replace(/\D/g, "").replace(/^(\d{5})(\d{3})$/, "$1-$2")}` : "",
@@ -90,6 +95,7 @@ export function Cart({
   items,
   restaurantName,
   whatsapp,
+  deliveryFee,
   onRemove,
   onUpdateQuantity,
   isOpen = true,
@@ -135,10 +141,11 @@ export function Cart({
     }
   }, [variant, isOpen]);
 
-  const total = items.reduce(
+  const productsTotal = items.reduce(
     (acc, item) => acc + item.product.price * item.quantity,
     0
   );
+  const total = productsTotal + (deliveryFee ?? 0);
   const itemCount = items.reduce((a, i) => a + i.quantity, 0);
   const isDrawer = variant === "drawer";
 
@@ -273,6 +280,14 @@ export function Cart({
             </AnimatePresence>
           </ul>
           <div className={`mt-4 shrink-0 space-y-3 border-t pt-4 ${isDrawer ? "border-neutral-200" : "border-neutral-100"}`}>
+            {deliveryFee != null && deliveryFee > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-neutral-600">Taxa de entrega</span>
+                <span className="font-semibold text-neutral-900">
+                  R$ {deliveryFee.toFixed(2).replace(".", ",")}
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-neutral-600">Total</span>
               <span className="text-lg font-bold text-neutral-900">
@@ -296,7 +311,7 @@ export function Cart({
 
   const handleAddressSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const msg = buildWhatsAppMessage(items, total, restaurantName, address);
+    const msg = buildWhatsAppMessage(items, productsTotal, restaurantName, address, deliveryFee);
     window.open(
       `https://wa.me/${whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`,
       "_blank",

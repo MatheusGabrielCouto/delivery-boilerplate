@@ -31,6 +31,7 @@ export interface Restaurant {
   description: string;
   whatsapp: string;
   icon?: string;
+  deliveryFee?: number;
 }
 
 export interface Footer {

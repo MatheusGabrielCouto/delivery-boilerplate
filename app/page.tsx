@@ -58,6 +58,7 @@ export default function Home() {
     items: cart,
     restaurantName: menuData.restaurant.name,
     whatsapp: menuData.restaurant.whatsapp,
+    deliveryFee: menuData.restaurant.deliveryFee,
     onRemove: removeFromCart,
     onUpdateQuantity: updateQuantity,
   };
