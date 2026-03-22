@@ -1,21 +1,31 @@
-import type { MenuData, Product } from "@/app/types";
-import menuData from "@/data/products.json";
+import type { Product } from "@/app/types";
 
-export function getProductImages(product: Product): string[] {
-  if (product.images && product.images.length > 0) {
-    return product.images;
-  }
-  return [product.image];
+function isValidImageUrl(url: string | undefined): boolean {
+  return typeof url === "string" && url.trim().length > 0;
 }
 
-export function getAllProductImageUrls(): string[] {
-  const data = menuData as MenuData;
+export function getProductImages(product: Product): string[] {
+  const fromImages = product.images?.filter(isValidImageUrl) ?? [];
+  if (fromImages.length > 0) return fromImages;
+  if (isValidImageUrl(product.image)) return [product.image];
+  return [];
+}
+
+export function getProductImage(product: Product): string | null {
+  const images = getProductImages(product);
+  return images[0] ?? null;
+}
+
+export function getAllProductImageUrls(
+  products: Product[],
+  restaurantIcon?: string
+): string[] {
   const urls = new Set<string>();
-  for (const product of data.products) {
+  for (const product of products) {
     for (const url of getProductImages(product)) {
-      urls.add(url);
+      if (isValidImageUrl(url)) urls.add(url);
     }
   }
-  if (data.restaurant?.icon) urls.add(data.restaurant.icon);
+  if (isValidImageUrl(restaurantIcon)) urls.add(restaurantIcon!);
   return Array.from(urls);
 }

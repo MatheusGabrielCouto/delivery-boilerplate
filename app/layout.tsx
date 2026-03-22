@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
+import { QueryClient, dehydrate } from "@tanstack/react-query";
 import "./globals.css";
-import { ThemeProvider } from "@/app/components/ThemeProvider";
-import { ImagePreloader } from "@/app/components/ImagePreloader";
-import menuData from "@/data/products.json";
-import type { MenuData } from "@/app/types";
+import { QueryProvider } from "@/app/components/QueryProvider";
+import { MenuHydrator } from "@/app/components/MenuHydrator";
+import { MenuProvider } from "@/app/components/MenuProvider";
+import { fetchMenu } from "@/app/lib/serverMenu";
+import { fetchRewards } from "@/app/lib/serverApi";
 
-const data = menuData as MenuData;
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   subsets: ["latin"],
@@ -16,20 +17,20 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: `${data.restaurant.name} - Cardápio Online`,
-    template: `%s | ${data.restaurant.name}`,
+    default: "Cardápio Online",
+    template: "%s | Cardápio Online",
   },
-  description: data.restaurant.description || "Peça online e receba em casa",
+  description: "Peça online e receba em casa",
   openGraph: {
-    title: `${data.restaurant.name} - Cardápio Online`,
-    description: data.restaurant.description || "Peça online e receba em casa",
+    title: "Cardápio Online",
+    description: "Peça online e receba em casa",
     type: "website",
     locale: "pt_BR",
   },
   twitter: {
     card: "summary_large_image",
-    title: `${data.restaurant.name} - Cardápio Online`,
-    description: data.restaurant.description || "Peça online e receba em casa",
+    title: "Cardápio Online",
+    description: "Peça online e receba em casa",
   },
   robots: {
     index: true,
@@ -37,19 +38,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Restaurant",
-    name: data.restaurant.name,
-    description: data.restaurant.description,
-    ...(data.restaurant.icon && { image: data.restaurant.icon }),
-    servesCuisine: "Brazilian",
-  };
+  const queryClient = new QueryClient();
+  const [menu, rewards] = await Promise.all([fetchMenu(), fetchRewards()]);
+  if (menu) queryClient.setQueryData(["menu"], menu);
+  queryClient.setQueryData(["rewards"], rewards ?? []);
+  const dehydratedState = dehydrate(queryClient);
 
   return (
     <html
@@ -57,13 +55,11 @@ export default function RootLayout({
       className={`${dmSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-        <ThemeProvider theme={data.theme}>
-          <ImagePreloader>{children}</ImagePreloader>
-        </ThemeProvider>
+        <QueryProvider>
+          <MenuHydrator state={dehydratedState}>
+            <MenuProvider>{children}</MenuProvider>
+          </MenuHydrator>
+        </QueryProvider>
       </body>
     </html>
   );

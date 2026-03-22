@@ -1,17 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { Category } from "@/app/types";
 
 interface CategoryNavProps {
   categories: Category[];
+  showRewards?: boolean;
 }
 
-export function CategoryNav({ categories }: CategoryNavProps) {
+export function CategoryNav({ categories, showRewards = false }: CategoryNavProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const scrollTargetRef = useRef<string | null>(null);
-  const sorted = [...categories].sort((a, b) => a.order - b.order);
+  const navItems = useMemo(() => {
+    const sorted = [...categories].sort((a, b) => a.order - b.order);
+    return showRewards
+      ? [...sorted, { id: "recompensas", name: "Recompensas", order: 999 }]
+      : sorted;
+  }, [categories, showRewards]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -26,12 +32,12 @@ export function CategoryNav({ categories }: CategoryNavProps) {
       { rootMargin: "-15% 0px -60% 0px", threshold: 0 }
     );
 
-    sorted.forEach(({ id }) => {
+    navItems.forEach(({ id }) => {
       const el = document.getElementById(id);
       if (el) observer.observe(el);
     });
     return () => observer.disconnect();
-  }, [sorted]);
+  }, [navItems]);
 
   const scrollToCategory = (id: string) => {
     const el = document.getElementById(id);
@@ -45,9 +51,9 @@ export function CategoryNav({ categories }: CategoryNavProps) {
   };
 
   return (
-    <nav className="sticky top-[52px] z-10 -mx-4 border-b border-neutral-200 bg-white px-4 pt-6 pb-2.5 sm:top-[72px] sm:mx-0 sm:px-0">
+    <nav className="sticky top-[52px] z-20 -mx-4 border-b border-neutral-200 bg-white px-4 pt-6 pb-2.5 sm:top-[72px] sm:mx-0 sm:px-0">
       <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
-        {sorted.map((cat) => {
+        {navItems.map((cat) => {
           const isActive = activeId === cat.id;
 
           return (
