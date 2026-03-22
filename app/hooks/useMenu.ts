@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { menuApi } from "@/app/services/api";
-import type { Category, Product } from "@/app/types";
+import type { MenuResponse } from "@/app/types/api";
+import type { BusinessHours, Category, Product } from "@/app/types";
 
 interface CategoryWithProducts {
   id: string;
@@ -61,20 +61,34 @@ function buildCategorySections(data: Record<string, unknown>): { category: Categ
 }
 
 export function useMenu() {
-  const query = useQuery({
+  const query = useQuery<MenuResponse | undefined>({
     queryKey: ["menu"],
-    queryFn: menuApi.get,
+    queryFn: () => Promise.reject(new Error("Menu deve ser carregado pelo servidor")),
+    staleTime: Infinity,
   });
 
   const categorySections = query.data
     ? buildCategorySections(query.data as unknown as Record<string, unknown>)
     : [];
 
+  const raw = query.data?.restaurant as Record<string, unknown> | undefined;
+  const restaurant: MenuResponse["restaurant"] | undefined = raw
+    ? {
+        name: String(raw.name ?? ""),
+        description: String(raw.description ?? ""),
+        whatsapp: String(raw.whatsapp ?? ""),
+        icon: raw.icon != null ? String(raw.icon) : undefined,
+        deliveryFee: raw.deliveryFee != null ? Number(raw.deliveryFee) : undefined,
+        businessHours: (raw.businessHours ?? raw.business_hours) as BusinessHours | undefined,
+        timezone: (raw.timezone ?? raw.time_zone) as string | undefined,
+      }
+    : undefined;
+
   return {
     ...query,
     menu: query.data,
     categorySections,
-    restaurant: query.data?.restaurant,
+    restaurant,
     theme: query.data?.theme,
     footer: query.data?.footer,
   };

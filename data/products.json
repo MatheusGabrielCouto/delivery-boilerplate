@@ -14,7 +14,17 @@
     "description": "Cardápio online - Peça e receba em casa",
     "whatsapp": "5545999999999",
     "icon": "/logo.svg",
-    "deliveryFee": 5.00
+    "deliveryFee": 5.00,
+    "timezone": "America/Sao_Paulo",
+    "businessHours": {
+      "monday": { "open": "11:00", "close": "23:00" },
+      "tuesday": { "open": "11:00", "close": "23:00" },
+      "wednesday": { "open": "11:00", "close": "23:00" },
+      "thursday": { "open": "11:00", "close": "23:00" },
+      "friday": { "open": "11:00", "close": "23:00" },
+      "saturday": { "open": "11:00", "close": "23:00" },
+      "sunday": null
+    }
   },
   "footer": {
     "copyright": "Todos os direitos reservados"

@@ -22,21 +22,23 @@ Projeto voltado para pequenos negócios que precisam de um cardápio online com 
 - **TypeScript**
 - **Tailwind CSS 4**
 - **React Query (TanStack Query)**
-- **Axios**
+- **Server Actions** — Chamadas à API apenas no servidor
 - **Framer Motion** — Animações
 - **Embla Carousel** — Carrossel de imagens
 
 ## Configuração
 
-Crie `.env.local`:
+Crie `.env.local` a partir de `.env.example`:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:4000
-NEXT_PUBLIC_RESTAURANT_ID=seu-restaurant-id
+API_URL=http://localhost:4000
+RESTAURANT_ID=seu-restaurant-id
 ```
 
-- **NEXT_PUBLIC_API_URL** — URL da API NestJS
-- **NEXT_PUBLIC_RESTAURANT_ID** — ID do restaurante (header `x-restaurant-id`)
+- **API_URL** — URL da API NestJS (usada apenas no servidor, não exposta ao cliente)
+- **RESTAURANT_ID** — ID do restaurante (header `x-restaurant-id`, usado apenas no servidor)
+
+Todas as requisições são feitas via Server Actions no servidor. O token de autenticação (quando existir) fica em cookie `delivery_token` (httpOnly). Use `setTokenAction(token)` após login e `clearTokenAction()` no logout.
 
 ## Início rápido
 
@@ -64,7 +66,8 @@ Acesse [http://localhost:3000](http://localhost:3000). A API deve estar rodando 
 ├── app/
 │   ├── components/
 │   ├── hooks/          # useMenu, useCustomer, useLoyalty, useRewards, useCreateOrder
-│   ├── services/       # Client Axios + funções de API
+│   ├── actions/        # Server Actions (api.ts)
+│   ├── lib/            # serverApi, serverMenu, cookies
 │   ├── types/
 │   └── ...
 └── package.json
@@ -72,5 +75,5 @@ Acesse [http://localhost:3000](http://localhost:3000). A API deve estar rodando 
 
 ## Extras
 
-- Telefone persistido em `localStorage` para pré-preenchimento
-- Header `Authorization: Bearer` quando houver token (preparado para login futuro)
+- Telefone persistido em cookies (`delivery_phone`) para pré-preenchimento
+- Token em cookie `delivery_token` (httpOnly). Use `setTokenAction` e `clearTokenAction` para login/logout

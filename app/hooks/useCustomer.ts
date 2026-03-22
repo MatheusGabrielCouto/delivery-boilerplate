@@ -1,34 +1,25 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { customersApi } from "@/app/services/api";
+import { getCookie, setCookie } from "@/app/lib/cookies";
+import { getCustomerAction } from "@/app/actions/api";
 
-const PHONE_STORAGE_KEY = "delivery_phone";
+const PHONE_COOKIE = "delivery_phone";
 
 export function getStoredPhone(): string {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem(PHONE_STORAGE_KEY) ?? "";
+  return getCookie(PHONE_COOKIE);
 }
 
 export function setStoredPhone(phone: string): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(PHONE_STORAGE_KEY, phone.replace(/\D/g, ""));
+  const digits = phone.replace(/\D/g, "");
+  if (digits) setCookie(PHONE_COOKIE, digits);
 }
 
 export function useCustomer(phone: string | undefined) {
   const digits = phone?.replace(/\D/g, "") ?? "";
   const query = useQuery({
     queryKey: ["customer", digits],
-    queryFn: async () => {
-      try {
-        return await customersApi.getByPhone(digits);
-      } catch (e: unknown) {
-        if (e && typeof e === "object" && "response" in e && (e as { response?: { status?: number } }).response?.status === 404) {
-          return null;
-        }
-        throw e;
-      }
-    },
+    queryFn: () => getCustomerAction(digits),
     enabled: digits.length >= 10,
   });
 

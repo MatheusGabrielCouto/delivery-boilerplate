@@ -1,5 +1,7 @@
 import type { Category, Product } from "./index";
 
+import type { BusinessHours } from "./index";
+
 export interface MenuResponse {
   restaurant: {
     name: string;
@@ -7,6 +9,8 @@ export interface MenuResponse {
     whatsapp: string;
     icon?: string;
     deliveryFee?: number;
+    businessHours?: BusinessHours;
+    timezone?: string;
   };
   theme?: {
     primary: string;

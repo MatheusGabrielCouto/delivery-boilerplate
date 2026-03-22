@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
+import { QueryClient, dehydrate } from "@tanstack/react-query";
 import "./globals.css";
 import { QueryProvider } from "@/app/components/QueryProvider";
+import { MenuHydrator } from "@/app/components/MenuHydrator";
 import { MenuProvider } from "@/app/components/MenuProvider";
+import { fetchMenu } from "@/app/lib/serverMenu";
+import { fetchRewards } from "@/app/lib/serverApi";
 
 const dmSans = DM_Sans({
   variable: "--font-dm-sans",
@@ -34,11 +38,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const queryClient = new QueryClient();
+  const [menu, rewards] = await Promise.all([fetchMenu(), fetchRewards()]);
+  if (menu) queryClient.setQueryData(["menu"], menu);
+  queryClient.setQueryData(["rewards"], rewards ?? []);
+  const dehydratedState = dehydrate(queryClient);
+
   return (
     <html
       lang="pt-BR"
@@ -46,7 +56,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans">
         <QueryProvider>
-          <MenuProvider>{children}</MenuProvider>
+          <MenuHydrator state={dehydratedState}>
+            <MenuProvider>{children}</MenuProvider>
+          </MenuHydrator>
         </QueryProvider>
       </body>
     </html>

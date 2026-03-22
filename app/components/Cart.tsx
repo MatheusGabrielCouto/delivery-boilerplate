@@ -50,6 +50,7 @@ interface CartProps {
   restaurantName: string;
   whatsapp: string;
   deliveryFee?: number;
+  isRestaurantOpen?: boolean;
   onRemove: (productId: string) => void;
   onRemoveReward: (rewardId: string) => void;
   onUpdateQuantity: (productId: string, delta: number) => void;
@@ -134,6 +135,7 @@ export function Cart({
   restaurantName,
   whatsapp,
   deliveryFee,
+  isRestaurantOpen = true,
   onRemove,
   onRemoveReward,
   onUpdateQuantity,
@@ -214,7 +216,8 @@ export function Cart({
   const itemCount = items.reduce((a, i) => a + i.quantity, 0) + rewardItems.reduce((a, i) => a + i.quantity, 0);
   const isDrawer = variant === "drawer";
 
-  const canCheckout = items.length > 0 || rewardItems.length > 0;
+  const hasItems = items.length > 0 || rewardItems.length > 0;
+  const canCheckout = hasItems;
   const requiredPoints = rewardItems.reduce((acc, r) => acc + r.pointsCost * r.quantity, 0);
   const hasInsufficientPoints =
     rewardItems.length > 0 &&
@@ -318,7 +321,7 @@ export function Cart({
         )}
       </div>
 
-      {!canCheckout ? (
+      {!hasItems ? (
         <div className={`flex flex-1 flex-col items-center justify-center text-center ${isDrawer ? "py-16" : "py-12"}`}>
           <div className={`flex items-center justify-center rounded-2xl bg-neutral-50 ${isDrawer ? "h-20 w-20" : "h-16 w-16"}`}>
             <FiShoppingCart className={`text-neutral-300 ${isDrawer ? "h-10 w-10" : "h-8 w-8"}`} />
@@ -573,10 +576,16 @@ export function Cart({
               </div>
             </div>
 
+            {!isRestaurantOpen && (
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+                O restaurante está fechado. Pedidos disponíveis apenas nos horários de funcionamento.
+              </p>
+            )}
             <motion.button
               type="button"
               onClick={() => setShowAddressForm(true)}
               disabled={
+                !isRestaurantOpen ||
                 phone.replace(/\D/g, "").length < 10 ||
                 (rewardItems.length > 0 && (loyaltyLoading || points < requiredPoints))
               }

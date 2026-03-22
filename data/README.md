@@ -21,7 +21,16 @@ Edite o arquivo `products.json` para cadastrar seus produtos de forma estática.
     "description": "Descrição exibida no header",
     "whatsapp": "5511999999999",
     "icon": "/logo.svg",
-    "deliveryFee": 5.00
+    "deliveryFee": 5.00,
+    "businessHours": {
+      "monday": { "open": "11:00", "close": "23:00" },
+      "tuesday": { "open": "11:00", "close": "23:00" },
+      "wednesday": { "open": "11:00", "close": "23:00" },
+      "thursday": { "open": "11:00", "close": "23:00" },
+      "friday": { "open": "11:00", "close": "23:00" },
+      "saturday": { "open": "11:00", "close": "23:00" },
+      "sunday": null
+    }
   },
   "footer": {
     "copyright": "Todos os direitos reservados"
@@ -67,6 +76,8 @@ Edite o arquivo `products.json` para cadastrar seus produtos de forma estática.
   - **whatsapp**: Número com DDD e país, só dígitos (ex: 5511999999999)
   - **icon** (opcional): Caminho do ícone/logo (ex: /logo.png ou /logo.svg)
   - **deliveryFee** (opcional): Taxa de entrega em reais. Omita ou use 0 para não cobrar.
+  - **timezone** (opcional): Fuso do restaurante para verificação de horários (ex: `"America/Sao_Paulo"`). Se omitido, usa o horário do dispositivo do usuário.
+  - **businessHours** (opcional): Horários de funcionamento. Use `null` para dia fechado (ex: `"sunday": null`). Formato `"HH:mm"`.
 - **footer** (opcional): Rodapé da página
   - **copyright**: Texto de direitos reservados (ex: "Todos os direitos reservados")
 - **categories**: Lista de categorias. O campo `order` define a ordem de exibição

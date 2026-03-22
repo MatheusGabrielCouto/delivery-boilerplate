@@ -10,6 +10,8 @@ import { Cart } from "@/app/components/Cart";
 import { CartButton } from "@/app/components/CartButton";
 import { Footer } from "@/app/components/Footer";
 import { RewardsSection } from "@/app/components/RewardsSection";
+import { BusinessHoursTrigger } from "@/app/components/BusinessHoursTrigger";
+import { isRestaurantOpen } from "@/app/lib/businessHours";
 import type { CartItem, CartRewardItem, Product } from "@/app/types";
 import type { Reward } from "@/app/types/api";
 
@@ -103,12 +105,17 @@ export default function Home() {
     setRewardItems([]);
   };
 
+  const businessHours = restaurant?.businessHours;
+  const timezone = restaurant?.timezone;
+  const restaurantOpen = isRestaurantOpen(businessHours, timezone);
+
   const cartProps = {
     items: cart,
     rewardItems,
     restaurantName: restaurant?.name ?? "",
     whatsapp: restaurant?.whatsapp ?? "",
     deliveryFee: restaurant?.deliveryFee,
+    isRestaurantOpen: restaurantOpen,
     onRemove: removeFromCart,
     onRemoveReward: removeRewardFromCart,
     onUpdateQuantity: updateQuantity,
@@ -148,8 +155,8 @@ export default function Home() {
       >
         Pular para o conteúdo
       </a>
-      <header className="sticky top-0 z-30 shrink-0 border-b border-neutral-200 bg-neutral-50/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
+      <header className="sticky top-0 z-30 shrink-0 w-full border-b border-neutral-200 bg-neutral-50/95 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
           {restaurant?.icon && (
             <img
               src={restaurant.icon}
@@ -160,7 +167,7 @@ export default function Home() {
               fetchPriority="high"
             />
           )}
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 overflow-hidden">
             <h1 className="truncate text-lg font-bold tracking-tight text-[var(--theme-foreground)] sm:text-2xl">
               {restaurant?.name}
             </h1>
@@ -168,8 +175,20 @@ export default function Home() {
               {restaurant?.description}
             </p>
           </div>
+          {businessHours && (
+            <BusinessHoursTrigger businessHours={businessHours} timezone={timezone} />
+          )}
         </div>
       </header>
+
+      {!restaurantOpen && businessHours && (
+        <div
+          className="w-full bg-amber-100 px-4 py-2.5 text-center text-sm font-medium text-amber-800 sm:px-6"
+          role="alert"
+        >
+          Fechado no momento. Pedidos nos horários de funcionamento.
+        </div>
+      )}
 
       <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-4 py-3 sm:px-6 sm:py-4">
         <CategoryNav
