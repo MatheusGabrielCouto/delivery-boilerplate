@@ -73,3 +73,28 @@ export interface CreateOrderResponse {
   discount: number;
   pointsEarned: number;
 }
+
+export type OrderStatus =
+  | "pending"
+  | "accepted"
+  | "preparing"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled"
+  | "ready";
+
+export interface OrderTrackingItem {
+  productId: string;
+  name: string;
+  quantity: number;
+  price: number;
+}
+
+export interface OrderTrackingResponse {
+  id: string;
+  status: OrderStatus;
+  statusLabel: string;
+  items: OrderTrackingItem[];
+  total: number;
+  createdAt: string;
+}

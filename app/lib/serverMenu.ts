@@ -1,11 +1,11 @@
 import type { MenuResponse } from "@/app/types/api";
+import { getApiBaseUrl } from "@/app/lib/apiConfig";
 
 export async function fetchMenu(): Promise<MenuResponse | null> {
-  const apiUrl = process.env.API_URL ?? "http://localhost:4000";
   const restaurantId = process.env.RESTAURANT_ID ?? "";
 
   try {
-    const res = await fetch(`${apiUrl}/menu`, {
+    const res = await fetch(`${getApiBaseUrl()}/menu`, {
       headers: {
         "Content-Type": "application/json",
         "x-restaurant-id": restaurantId,

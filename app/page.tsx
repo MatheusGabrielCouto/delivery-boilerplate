@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useMenu } from "@/app/hooks/useMenu";
 import { useRewards } from "@/app/hooks/useRewards";
 import { CategorySection } from "@/app/components/CategorySection";
@@ -11,9 +12,11 @@ import { CartButton } from "@/app/components/CartButton";
 import { Footer } from "@/app/components/Footer";
 import { RewardsSection } from "@/app/components/RewardsSection";
 import { BusinessHoursTrigger } from "@/app/components/BusinessHoursTrigger";
+import Link from "next/link";
+import { FiPackage } from "react-icons/fi";
 import { isRestaurantOpen } from "@/app/lib/businessHours";
 import type { CartItem, CartRewardItem, Product } from "@/app/types";
-import type { Reward } from "@/app/types/api";
+import type { Reward, CreateOrderResponse } from "@/app/types/api";
 
 const ProductDetail = dynamic(
   () => import("@/app/components/ProductDetail").then((m) => ({ default: m.ProductDetail })),
@@ -21,6 +24,7 @@ const ProductDetail = dynamic(
 );
 
 export default function Home() {
+  const router = useRouter();
   const { menu, categorySections, restaurant, footer, isLoading, isError, error } = useMenu();
   const { data: rewards } = useRewards();
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -120,7 +124,10 @@ export default function Home() {
     onRemoveReward: removeRewardFromCart,
     onUpdateQuantity: updateQuantity,
     onUpdateRewardQuantity: updateRewardQuantity,
-    onOrderSuccess: clearCart,
+    onOrderSuccess: (order: CreateOrderResponse) => {
+      clearCart();
+      if (order?.id) router.push(`/pedidos/${order.id}`);
+    },
   };
 
   const footerCopyright = footer?.copyright ?? "Todos os direitos reservados";
@@ -175,9 +182,19 @@ export default function Home() {
               {restaurant?.description}
             </p>
           </div>
-          {businessHours && (
-            <BusinessHoursTrigger businessHours={businessHours} timezone={timezone} />
-          )}
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/pedidos"
+              className="flex items-center gap-2 rounded-lg bg-[var(--theme-primary)] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--theme-primary-hover)] sm:px-4"
+              aria-label="Acompanhar pedido"
+            >
+              <FiPackage className="h-4 w-4" />
+              <span className="hidden sm:inline">Acompanhar pedido</span>
+            </Link>
+            {businessHours && (
+              <BusinessHoursTrigger businessHours={businessHours} timezone={timezone} />
+            )}
+          </div>
         </div>
       </header>
 

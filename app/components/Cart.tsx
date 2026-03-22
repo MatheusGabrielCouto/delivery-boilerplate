@@ -55,7 +55,7 @@ interface CartProps {
   onRemoveReward: (rewardId: string) => void;
   onUpdateQuantity: (productId: string, delta: number) => void;
   onUpdateRewardQuantity: (rewardId: string, delta: number) => void;
-  onOrderSuccess?: () => void;
+  onOrderSuccess?: (order: CreateOrderResponse) => void;
   isOpen?: boolean;
   onClose?: () => void;
   variant?: "sidebar" | "drawer";
@@ -242,11 +242,11 @@ export function Cart({
     if (digits.length < 10) return;
     if (rewardItems.length > 0 && (loyaltyLoading || points < requiredPoints)) return;
 
-    const fullPhone = digits.length >= 12 ? digits : `55${digits}`;
+    const phoneForOrder = digits.replace(/^55/, "");
     const orderPayload: CreateOrderPayload = {
       customer: {
         name: customerName.trim() || "Cliente",
-        phone: fullPhone,
+        phone: phoneForOrder,
       },
       items: items.map((i) => ({
         productId: String(i.product.id),
@@ -288,7 +288,7 @@ export function Cart({
       validateCoupon.reset();
       queryClient.invalidateQueries({ queryKey: ["customer", digits] });
       queryClient.invalidateQueries({ queryKey: ["loyalty", digits] });
-      onOrderSuccess?.();
+      onOrderSuccess?.(orderData);
       onClose?.();
     } catch {
       // createOrder.error is set by React Query

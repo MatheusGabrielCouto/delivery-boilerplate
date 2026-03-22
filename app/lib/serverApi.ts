@@ -7,12 +7,14 @@ import type {
   ValidateCouponResponse,
   CreateOrderPayload,
   CreateOrderResponse,
+  OrderTrackingResponse,
 } from "@/app/types/api";
+
+import { getApiBaseUrl } from "@/app/lib/apiConfig";
 
 const TOKEN_COOKIE = "delivery_token";
 
 function getHeaders(): Record<string, string> {
-  const apiUrl = process.env.API_URL ?? "http://localhost:4000";
   const restaurantId = process.env.RESTAURANT_ID ?? "";
   return {
     "Content-Type": "application/json",
@@ -29,7 +31,7 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 }
 
 function getBaseUrl(): string {
-  return process.env.API_URL ?? "http://localhost:4000";
+  return getApiBaseUrl();
 }
 
 export async function fetchCustomer(phone: string): Promise<CustomerResponse | null> {
@@ -107,4 +109,39 @@ export async function createOrder(payload: CreateOrderPayload): Promise<CreateOr
   const data = await res.json();
   if (!res.ok) throw new Error(data?.message ?? "Erro ao criar pedido");
   return data;
+}
+
+export async function fetchOrderTracking(
+  orderId: string,
+  phone: string
+): Promise<OrderTrackingResponse | null> {
+  try {
+    const headers = getHeaders();
+    const digits = phone.replace(/\D/g, "");
+    const res = await fetch(`${getBaseUrl()}/order-tracking/${orderId}?phone=${digits}`, {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchOrdersInProgress(phone: string): Promise<OrderTrackingResponse[]> {
+  try {
+    const headers = getHeaders();
+    const restaurantId = process.env.RESTAURANT_ID ?? "";
+    const digits = phone.replace(/\D/g, "");
+    const res = await fetch(
+      `${getBaseUrl()}/order-tracking?restaurantId=${restaurantId}&phone=${digits}`,
+      { headers, cache: "no-store" }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
 }
