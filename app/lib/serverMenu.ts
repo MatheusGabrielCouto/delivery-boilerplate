@@ -10,7 +10,7 @@ export async function fetchMenu(): Promise<MenuResponse | null> {
         "Content-Type": "application/json",
         "x-restaurant-id": restaurantId,
       },
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
 
     if (!res.ok) return null;

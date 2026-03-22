@@ -37,7 +37,7 @@ export async function fetchCustomer(phone: string): Promise<CustomerResponse | n
     const headers = await getAuthHeaders();
     const res = await fetch(`${getBaseUrl()}/customers/${phone.replace(/\D/g, "")}`, {
       headers,
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error("Erro ao buscar cliente");
@@ -52,7 +52,7 @@ export async function fetchLoyaltyBalance(phone: string): Promise<LoyaltyBalance
     const headers = await getAuthHeaders();
     const res = await fetch(`${getBaseUrl()}/loyalty/balance/${phone.replace(/\D/g, "")}`, {
       headers,
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
     if (res.status === 404) return { points: 0 };
     if (!res.ok) throw new Error("Erro ao buscar pontos");
@@ -67,7 +67,7 @@ export async function fetchRewards(): Promise<Reward[]> {
     const headers = await getAuthHeaders();
     const res = await fetch(`${getBaseUrl()}/rewards`, {
       headers,
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
     if (!res.ok) throw new Error("Erro ao buscar recompensas");
     const data = await res.json();
