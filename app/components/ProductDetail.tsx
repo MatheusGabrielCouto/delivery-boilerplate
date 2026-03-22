@@ -6,6 +6,7 @@ import { FiX, FiMinus, FiPlus } from "react-icons/fi";
 import { ImageCarousel } from "@/app/components/ImageCarousel";
 import { getProductImages } from "@/app/lib/productImages";
 import type { Product } from "@/app/types";
+import { getEffectivePrice } from "@/app/types";
 
 interface ProductDetailProps {
   product: Product | null;
@@ -33,9 +34,14 @@ export function ProductDetail({ product, onClose, onAdd }: ProductDetailProps) {
     }
   };
 
+  if (!product) return null;
+
+  const effectivePrice = getEffectivePrice(product);
+  const hasPromo = product.onSale && product.discountPrice != null;
+  const economia = hasPromo ? (product.price - product.discountPrice!) * quantity : 0;
+
   return (
     <AnimatePresence>
-      {product && (
       <motion.div
         key={product.id}
         initial={{ opacity: 0 }}
@@ -50,9 +56,14 @@ export function ProductDetail({ product, onClose, onAdd }: ProductDetailProps) {
           exit={{ opacity: 0, y: 100, scale: 0.95 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
-          className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
+          className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-xl md:max-w-xl"
         >
           <div className="relative shrink-0">
+            {hasPromo && (
+              <span className="absolute left-4 top-3 z-10 rounded-lg bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white shadow-md">
+                Promoção
+              </span>
+            )}
             <ImageCarousel
               images={getProductImages(product)}
               alt={product.name}
@@ -70,13 +81,33 @@ export function ProductDetail({ product, onClose, onAdd }: ProductDetailProps) {
           </div>
 
           <div className="flex flex-1 flex-col overflow-y-auto p-6">
-            <h2 className="text-xl font-semibold text-neutral-900 sm:text-2xl">
+            <h2 className="text-xl font-semibold text-neutral-900 md:text-2xl">
               {product.name}
             </h2>
             <p className="mt-2 text-neutral-600">{product.description}</p>
 
-            <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
+            {hasPromo && (
+              <div className="mt-4 rounded-xl bg-[var(--theme-secondary-soft)] p-4 md:mt-5 md:flex md:items-center md:justify-between md:gap-4 md:p-5">
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 md:gap-x-3">
+                  <span className="text-sm text-neutral-500">De</span>
+                  <span className="text-base font-medium text-neutral-400 line-through md:text-lg">
+                    R$ {(product.price * quantity).toFixed(2).replace(".", ",")}
+                  </span>
+                  <span className="text-sm text-neutral-500">por</span>
+                  <span className="text-xl font-bold text-[var(--theme-primary)] md:text-2xl">
+                    R$ {(effectivePrice * quantity).toFixed(2).replace(".", ",")}
+                  </span>
+                </div>
+                {economia > 0 && (
+                  <span className="mt-2 inline-block rounded-full bg-[var(--theme-primary)]/15 px-3 py-1 text-sm font-semibold text-[var(--theme-primary)] md:mt-0 md:shrink-0">
+                    Economize R$ {economia.toFixed(2).replace(".", ",")}
+                  </span>
+                )}
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between md:gap-6">
+              <div className="flex items-center gap-4">
                 <div className="flex items-center rounded-lg border border-neutral-200">
                   <button
                     type="button"
@@ -96,14 +127,16 @@ export function ProductDetail({ product, onClose, onAdd }: ProductDetailProps) {
                     <FiPlus className="h-4 w-4" />
                   </button>
                 </div>
-                <span className="text-lg font-bold text-[var(--theme-primary)]">
-                  R$ {(product.price * quantity).toFixed(2).replace(".", ",")}
-                </span>
+                {!hasPromo && (
+                  <span className="text-xl font-bold text-[var(--theme-primary)] md:text-2xl">
+                    R$ {(effectivePrice * quantity).toFixed(2).replace(".", ",")}
+                  </span>
+                )}
               </div>
               <button
                 type="button"
                 onClick={handleAdd}
-                className="w-full rounded-xl bg-[var(--theme-primary)] px-6 py-3 font-medium text-white transition-colors hover:bg-[var(--theme-primary-hover)] sm:w-auto"
+                className="w-full rounded-xl bg-[var(--theme-primary)] px-6 py-3 font-medium text-white transition-colors hover:bg-[var(--theme-primary-hover)] sm:w-auto sm:shrink-0"
               >
                 Adicionar ao carrinho
               </button>
@@ -111,7 +144,6 @@ export function ProductDetail({ product, onClose, onAdd }: ProductDetailProps) {
           </div>
         </motion.div>
       </motion.div>
-      )}
     </AnimatePresence>
   );
 }

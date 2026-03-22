@@ -1,14 +1,17 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
-import { getMenuData, getCategoriesWithProducts } from "@/app/lib/products";
+import { useState } from "react";
+import { useMenu } from "@/app/hooks/useMenu";
+import { useRewards } from "@/app/hooks/useRewards";
 import { CategorySection } from "@/app/components/CategorySection";
 import { CategoryNav } from "@/app/components/CategoryNav";
 import { Cart } from "@/app/components/Cart";
 import { CartButton } from "@/app/components/CartButton";
 import { Footer } from "@/app/components/Footer";
-import type { CartItem, Product } from "@/app/types";
+import { RewardsSection } from "@/app/components/RewardsSection";
+import type { CartItem, CartRewardItem, Product } from "@/app/types";
+import type { Reward } from "@/app/types/api";
 
 const ProductDetail = dynamic(
   () => import("@/app/components/ProductDetail").then((m) => ({ default: m.ProductDetail })),
@@ -16,13 +19,16 @@ const ProductDetail = dynamic(
 );
 
 export default function Home() {
-  const menuData = useMemo(() => getMenuData(), []);
-  const categorySections = useMemo(() => getCategoriesWithProducts(), []);
+  const { menu, categorySections, restaurant, footer, isLoading, isError, error } = useMenu();
+  const { data: rewards } = useRewards();
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [rewardItems, setRewardItems] = useState<CartRewardItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const itemCount = cart.reduce((a, i) => a + i.quantity, 0);
+  const itemCount =
+    cart.reduce((a, i) => a + i.quantity, 0) +
+    rewardItems.reduce((a, i) => a + i.quantity, 0);
 
   const addToCart = (product: Product, quantity = 1) => {
     setCart((prev) => {
@@ -38,15 +44,41 @@ export default function Home() {
     });
   };
 
+  const addRewardToCart = (reward: Reward) => {
+    setRewardItems((prev) => {
+      const existing = prev.find((i) => i.rewardId === reward.id);
+      if (existing) {
+        return prev.map((i) =>
+          i.rewardId === reward.id
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
+        );
+      }
+      return [
+        ...prev,
+        {
+          rewardId: reward.id,
+          name: reward.name,
+          pointsCost: reward.pointsCost,
+          quantity: 1,
+        },
+      ];
+    });
+  };
+
   const removeFromCart = (productId: string) => {
     setCart((prev) => prev.filter((i) => i.product.id !== productId));
+  };
+
+  const removeRewardFromCart = (rewardId: string) => {
+    setRewardItems((prev) => prev.filter((i) => i.rewardId !== rewardId));
   };
 
   const updateQuantity = (productId: string, delta: number) => {
     setCart((prev) =>
       prev
         .map((i) =>
-          i.product.id === productId
+          productId === i.product.id
             ? { ...i, quantity: i.quantity + delta }
             : i
         )
@@ -54,17 +86,59 @@ export default function Home() {
     );
   };
 
-  const cartProps = {
-    items: cart,
-    restaurantName: menuData.restaurant.name,
-    whatsapp: menuData.restaurant.whatsapp,
-    deliveryFee: menuData.restaurant.deliveryFee,
-    onRemove: removeFromCart,
-    onUpdateQuantity: updateQuantity,
+  const updateRewardQuantity = (rewardId: string, delta: number) => {
+    setRewardItems((prev) =>
+      prev
+        .map((i) =>
+          rewardId === i.rewardId
+            ? { ...i, quantity: i.quantity + delta }
+            : i
+        )
+        .filter((i) => i.quantity > 0)
+    );
   };
 
-  const footerCopyright =
-    menuData.footer?.copyright ?? "Todos os direitos reservados";
+  const clearCart = () => {
+    setCart([]);
+    setRewardItems([]);
+  };
+
+  const cartProps = {
+    items: cart,
+    rewardItems,
+    restaurantName: restaurant?.name ?? "",
+    whatsapp: restaurant?.whatsapp ?? "",
+    deliveryFee: restaurant?.deliveryFee,
+    onRemove: removeFromCart,
+    onRemoveReward: removeRewardFromCart,
+    onUpdateQuantity: updateQuantity,
+    onUpdateRewardQuantity: updateRewardQuantity,
+    onOrderSuccess: clearCart,
+  };
+
+  const footerCopyright = footer?.copyright ?? "Todos os direitos reservados";
+
+  if (isError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6">
+        <p className="text-center text-red-600">
+          Erro ao carregar o cardápio. Tente novamente.
+        </p>
+        <p className="text-sm text-neutral-500">
+          {error?.message}
+        </p>
+      </div>
+    );
+  }
+
+  if (isLoading || !menu) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[var(--theme-primary)] border-t-transparent" />
+        <p className="text-sm text-neutral-500">Carregando cardápio...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--theme-background)]">
@@ -74,11 +148,11 @@ export default function Home() {
       >
         Pular para o conteúdo
       </a>
-      <header className="sticky top-0 z-20 shrink-0 border-b border-neutral-200 bg-neutral-50/95 backdrop-blur-md">
+      <header className="sticky top-0 z-30 shrink-0 border-b border-neutral-200 bg-neutral-50/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
-          {menuData.restaurant.icon && (
+          {restaurant?.icon && (
             <img
-              src={menuData.restaurant.icon}
+              src={restaurant.icon}
               alt=""
               width={56}
               height={56}
@@ -88,17 +162,20 @@ export default function Home() {
           )}
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-lg font-bold tracking-tight text-[var(--theme-foreground)] sm:text-2xl">
-              {menuData.restaurant.name}
+              {restaurant?.name}
             </h1>
             <p className="mt-0.5 truncate text-xs text-[var(--theme-foreground-muted)] sm:text-sm">
-              {menuData.restaurant.description}
+              {restaurant?.description}
             </p>
           </div>
         </div>
       </header>
 
       <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-4 py-3 sm:px-6 sm:py-4">
-        <CategoryNav categories={categorySections.map(({ category }) => category)} />
+        <CategoryNav
+          categories={categorySections.map(({ category }) => category)}
+          showRewards={(rewards?.length ?? 0) > 0}
+        />
 
         <div className="flex flex-col gap-12 pb-32 lg:flex-row lg:gap-8 lg:pb-12">
           <section className="min-w-0 flex-1 space-y-12">
@@ -112,6 +189,7 @@ export default function Home() {
                 index={i}
               />
             ))}
+            <RewardsSection onAddReward={addRewardToCart} />
           </section>
 
           <section className="hidden lg:block lg:w-96 lg:shrink-0">

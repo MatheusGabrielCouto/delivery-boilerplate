@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
-import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiChevronLeft, FiChevronRight, FiImage } from "react-icons/fi";
+import { ProductImage } from "@/app/components/ProductImage";
 
 interface ImageCarouselProps {
   images: string[];
@@ -36,21 +36,27 @@ export function ImageCarousel({
 
   const selectedIndex = useEmblaCarouselSelectedIndex(emblaApi);
 
-  if (images.length === 0) return null;
-
   const aspectClass = {
     "4/3": "aspect-[4/3]",
     "16/10": "aspect-[16/10]",
     "1/1": "aspect-square",
   }[aspectRatio];
 
+  if (images.length === 0) {
+    return (
+      <div className={`flex items-center justify-center overflow-hidden bg-neutral-200 ${aspectClass} ${className}`}>
+        <FiImage className="h-16 w-16 text-neutral-400" aria-hidden />
+        <span className="sr-only">Sem imagem</span>
+      </div>
+    );
+  }
+
   if (images.length === 1) {
     return (
       <div className={`relative overflow-hidden bg-neutral-100 ${aspectClass} ${className}`}>
-        <Image
+        <ProductImage
           src={images[0]}
           alt={alt}
-          fill
           className={imageClassName}
           sizes="(max-width: 640px) 100vw, 512px"
         />
@@ -67,13 +73,11 @@ export function ImageCarousel({
               key={`${src}-${i}`}
               className="relative h-full min-w-0 flex-[0_0_100%]"
             >
-              <Image
+              <ProductImage
                 src={src}
                 alt={`${alt} - imagem ${i + 1}`}
-                fill
                 className={imageClassName}
                 sizes="(max-width: 640px) 100vw, 512px"
-                draggable={false}
               />
             </div>
           ))}

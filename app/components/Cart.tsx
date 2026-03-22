@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiShoppingCart,
@@ -13,9 +12,19 @@ import {
   FiMapPin,
   FiSearch,
   FiHome,
+  FiGift,
 } from "react-icons/fi";
-import { getProductImages } from "@/app/lib/productImages";
-import type { CartItem } from "@/app/types";
+import { ProductImage } from "@/app/components/ProductImage";
+import { getProductImage } from "@/app/lib/productImages";
+import { getStoredPhone, setStoredPhone } from "@/app/hooks/useCustomer";
+import { useCustomer } from "@/app/hooks/useCustomer";
+import { useLoyalty } from "@/app/hooks/useLoyalty";
+import { useValidateCoupon } from "@/app/hooks/useValidateCoupon";
+import { useCreateOrder } from "@/app/hooks/useCreateOrder";
+import { useQueryClient } from "@tanstack/react-query";
+import type { CartItem, CartRewardItem } from "@/app/types";
+import { getEffectivePrice } from "@/app/types";
+import type { CreateOrderResponse } from "@/app/types/api";
 
 interface AddressForm {
   cep: string;
@@ -37,11 +46,15 @@ interface ViaCepResponse {
 
 interface CartProps {
   items: CartItem[];
+  rewardItems: CartRewardItem[];
   restaurantName: string;
   whatsapp: string;
   deliveryFee?: number;
   onRemove: (productId: string) => void;
+  onRemoveReward: (rewardId: string) => void;
   onUpdateQuantity: (productId: string, delta: number) => void;
+  onUpdateRewardQuantity: (rewardId: string, delta: number) => void;
+  onOrderSuccess?: () => void;
   isOpen?: boolean;
   onClose?: () => void;
   variant?: "sidebar" | "drawer";
@@ -49,25 +62,33 @@ interface CartProps {
 
 function buildWhatsAppMessage(
   items: CartItem[],
-  productsTotal: number,
+  rewardItems: CartRewardItem[],
+  orderResponse: { total: number; discount: number; pointsEarned: number },
   restaurantName: string,
   address?: AddressForm,
   deliveryFee?: number
 ): string {
-  const total = productsTotal + (deliveryFee ?? 0);
   const lines = [
     `Olá! Gostaria de fazer um pedido no *${restaurantName}*`,
     "",
     "*Pedido:*",
     ...items.map(
       (i) =>
-        `• ${i.product.name} ${i.quantity}x - R$ ${(i.product.price * i.quantity).toFixed(2).replace(".", ",")}`
+        `• ${i.product.name} ${i.quantity}x - R$ ${(getEffectivePrice(i.product) * i.quantity).toFixed(2).replace(".", ",")}`
     ),
+    ...rewardItems.map((r) => `• ${r.name} ${r.quantity}x - Troca de pontos`),
   ];
-  if (deliveryFee != null && deliveryFee > 0) {
-    lines.push("", `*Taxa de entrega: R$ ${deliveryFee.toFixed(2).replace(".", ",")}*`);
+  const fee = Number(deliveryFee);
+  if (deliveryFee != null && fee > 0) {
+    lines.push("", `*Taxa de entrega: R$ ${fee.toFixed(2).replace(".", ",")}*`);
   }
-  lines.push("", `*Total: R$ ${total.toFixed(2).replace(".", ",")}*`);
+  if (orderResponse.discount > 0) {
+    lines.push("", `*Desconto: -R$ ${orderResponse.discount.toFixed(2).replace(".", ",")}*`);
+  }
+  lines.push("", `*Total: R$ ${orderResponse.total.toFixed(2).replace(".", ",")}*`);
+  if (orderResponse.pointsEarned > 0) {
+    lines.push("", `*Pontos ganhos: ${orderResponse.pointsEarned}*`);
+  }
   if (address?.street && address?.number && address?.neighborhood && address?.city) {
     const addr = [
       address.cep ? `CEP ${address.cep.replace(/\D/g, "").replace(/^(\d{5})(\d{3})$/, "$1-$2")}` : "",
@@ -82,6 +103,22 @@ function buildWhatsAppMessage(
   return lines.join("\n");
 }
 
+const MAX_WHATSAPP_URL_LENGTH = 2000;
+const BRAZIL_COUNTRY_CODE = "55";
+
+function buildWhatsAppUrl(phone: string, msg: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (!digits || digits.length < 10) return "";
+  const fullNumber = digits.length >= 12 ? digits : `${BRAZIL_COUNTRY_CODE}${digits}`;
+  const encoded = encodeURIComponent(msg);
+  let text = encoded;
+  if (encoded.length > MAX_WHATSAPP_URL_LENGTH - 80) {
+    const truncateAt = Math.floor((MAX_WHATSAPP_URL_LENGTH - 80) * 0.9);
+    text = encoded.slice(0, truncateAt) + encodeURIComponent("\n\n[... mensagem truncada - envie o restante manualmente]");
+  }
+  return `https://api.whatsapp.com/send?phone=${fullNumber}&text=${text}`;
+}
+
 const initialAddress: AddressForm = {
   cep: "",
   street: "",
@@ -93,19 +130,44 @@ const initialAddress: AddressForm = {
 
 export function Cart({
   items,
+  rewardItems,
   restaurantName,
   whatsapp,
   deliveryFee,
   onRemove,
+  onRemoveReward,
   onUpdateQuantity,
+  onUpdateRewardQuantity,
+  onOrderSuccess,
   isOpen = true,
   onClose,
   variant = "sidebar",
 }: CartProps) {
+  const queryClient = useQueryClient();
+  const [phone, setPhone] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [couponCode, setCouponCode] = useState("");
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [address, setAddress] = useState<AddressForm>(initialAddress);
   const [cepLoading, setCepLoading] = useState(false);
   const [cepError, setCepError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPhone(getStoredPhone());
+  }, []);
+
+  useEffect(() => {
+    if (phone.length >= 10) setStoredPhone(phone);
+  }, [phone]);
+
+  const { customer, isExisting } = useCustomer(phone || undefined);
+  const { points, isFetching: loyaltyLoading } = useLoyalty(phone || undefined);
+  const validateCoupon = useValidateCoupon();
+  const createOrder = useCreateOrder();
+
+  useEffect(() => {
+    if (customer?.name) setCustomerName(customer.name);
+  }, [customer?.name]);
 
   const fetchAddressByCep = useCallback(async (cep: string) => {
     const digits = cep.replace(/\D/g, "");
@@ -142,12 +204,88 @@ export function Cart({
   }, [variant, isOpen]);
 
   const productsTotal = items.reduce(
-    (acc, item) => acc + item.product.price * item.quantity,
+    (acc, item) => acc + getEffectivePrice(item.product) * item.quantity,
     0
   );
-  const total = productsTotal + (deliveryFee ?? 0);
-  const itemCount = items.reduce((a, i) => a + i.quantity, 0);
+  const couponDiscount = validateCoupon.data?.valid ? validateCoupon.data.discount : 0;
+  const deliveryFeeNum = Number(deliveryFee) || 0;
+  const subtotalWithDelivery = productsTotal + deliveryFeeNum;
+  const totalBeforePoints = Math.max(0, subtotalWithDelivery - couponDiscount);
+  const itemCount = items.reduce((a, i) => a + i.quantity, 0) + rewardItems.reduce((a, i) => a + i.quantity, 0);
   const isDrawer = variant === "drawer";
+
+  const canCheckout = items.length > 0 || rewardItems.length > 0;
+  const requiredPoints = rewardItems.reduce((acc, r) => acc + r.pointsCost * r.quantity, 0);
+  const hasInsufficientPoints =
+    rewardItems.length > 0 &&
+    phone.replace(/\D/g, "").length >= 10 &&
+    !loyaltyLoading &&
+    points < requiredPoints;
+
+  const handleValidateCoupon = () => {
+    const orderValue = productsTotal + deliveryFeeNum;
+    if (!couponCode.trim() || orderValue <= 0) return;
+    const digits = phone.replace(/\D/g, "");
+    validateCoupon.mutate({
+      code: couponCode.trim(),
+      orderValue,
+      ...(digits.length >= 10 && { customerPhone: digits }),
+    });
+  };
+
+  const handleAddressSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length < 10) return;
+    if (rewardItems.length > 0 && (loyaltyLoading || points < requiredPoints)) return;
+
+    const orderPayload = {
+      customer: {
+        name: customerName.trim() || "Cliente",
+        phone: digits,
+      },
+      items: items.map((i) => ({
+        productId: i.product.id,
+        quantity: i.quantity,
+      })),
+      couponCode: validateCoupon.data?.valid ? couponCode.trim() : undefined,
+      rewards: rewardItems.flatMap((r) => Array(r.quantity).fill(r.rewardId)),
+    };
+
+    try {
+      const order = await createOrder.mutateAsync(orderPayload);
+      const orderData =
+        (order as { data?: CreateOrderResponse })?.data ??
+        (order as { order?: CreateOrderResponse })?.order ??
+        (order as CreateOrderResponse);
+      const total = Number(orderData?.total) ?? 0;
+      const discount = Number(orderData?.discount) ?? 0;
+      const pointsEarned = Number(orderData?.pointsEarned) ?? 0;
+      const msg = buildWhatsAppMessage(
+        items,
+        rewardItems,
+        { total, discount, pointsEarned },
+        restaurantName,
+        address,
+        deliveryFee
+      );
+      const whatsappUrl = buildWhatsAppUrl(whatsapp, msg);
+      if (whatsappUrl) {
+        window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+      }
+      setShowAddressForm(false);
+      setAddress(initialAddress);
+      setCepError(null);
+      setCouponCode("");
+      validateCoupon.reset();
+      queryClient.invalidateQueries({ queryKey: ["customer", digits] });
+      queryClient.invalidateQueries({ queryKey: ["loyalty", digits] });
+      onOrderSuccess?.();
+      onClose?.();
+    } catch {
+      // createOrder.error is set by React Query
+    }
+  };
 
   const content = (
     <>
@@ -157,9 +295,7 @@ export function Cart({
             <FiShoppingCart className={isDrawer ? "h-5 w-5 text-neutral-600" : "h-5 w-5"} />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-neutral-900">
-              Carrinho
-            </h2>
+            <h2 className="text-lg font-bold text-neutral-900">Carrinho</h2>
             {itemCount > 0 && (
               <p className="text-xs font-medium text-neutral-500">
                 {itemCount} {itemCount === 1 ? "item" : "itens"}
@@ -182,14 +318,12 @@ export function Cart({
         )}
       </div>
 
-      {items.length === 0 ? (
+      {!canCheckout ? (
         <div className={`flex flex-1 flex-col items-center justify-center text-center ${isDrawer ? "py-16" : "py-12"}`}>
           <div className={`flex items-center justify-center rounded-2xl bg-neutral-50 ${isDrawer ? "h-20 w-20" : "h-16 w-16"}`}>
             <FiShoppingCart className={`text-neutral-300 ${isDrawer ? "h-10 w-10" : "h-8 w-8"}`} />
           </div>
-          <p className="mt-4 text-sm font-semibold text-neutral-600">
-            Carrinho vazio
-          </p>
+          <p className="mt-4 text-sm font-semibold text-neutral-600">Carrinho vazio</p>
           <p className="mt-1 max-w-[200px] text-xs text-neutral-500">
             {isDrawer ? "Toque nos produtos para adicionar" : "Clique nos produtos para adicionar ao pedido"}
           </p>
@@ -208,9 +342,7 @@ export function Cart({
           <ul className={`mt-4 flex flex-1 flex-col gap-2.5 overflow-y-auto overscroll-contain ${!isDrawer ? "cart-scroll max-h-[min(50vh,380px)] min-h-0 pr-1" : ""}`}>
             <AnimatePresence mode="popLayout">
               {items.map((item) => {
-                const subtotal = item.product.price * item.quantity;
-                const image = getProductImages(item.product)[0];
-
+                const subtotal = getEffectivePrice(item.product) * item.quantity;
                 return (
                   <motion.li
                     key={item.product.id}
@@ -221,10 +353,9 @@ export function Cart({
                     className={`flex gap-3 rounded-xl p-3 transition-colors ${isDrawer ? "bg-neutral-50" : "bg-neutral-50/80 hover:bg-neutral-100/80"}`}
                   >
                     <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-neutral-200 ring-1 ring-neutral-100">
-                      <Image
-                        src={image}
+                      <ProductImage
+                        src={getProductImage(item.product)}
                         alt={item.product.name}
-                        fill
                         className="object-cover"
                         sizes="56px"
                       />
@@ -234,7 +365,7 @@ export function Cart({
                         {item.product.name}
                       </p>
                       <p className="mt-0.5 truncate text-xs text-neutral-500">
-                        R$ {item.product.price.toFixed(2).replace(".", ",")} un.
+                        R$ {getEffectivePrice(item.product).toFixed(2).replace(".", ",")} un.
                       </p>
                       <div className="mt-2 flex flex-nowrap items-center justify-between gap-2">
                         <div className="flex shrink-0 items-center rounded-lg bg-white shadow-sm ring-1 ring-neutral-100">
@@ -277,29 +408,181 @@ export function Cart({
                   </motion.li>
                 );
               })}
+              {rewardItems.map((r) => (
+                <motion.li
+                  key={r.rewardId}
+                  layout
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className={`flex gap-3 rounded-xl p-3 ${isDrawer ? "bg-neutral-50" : "bg-neutral-50/80"}`}
+                >
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-[var(--theme-secondary-soft)]">
+                    <FiGift className="h-6 w-6 text-[var(--theme-secondary)]" />
+                  </div>
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <p className="truncate text-sm font-semibold text-neutral-900">{r.name}</p>
+                    <p className="mt-0.5 text-xs text-neutral-500">{r.pointsCost} pts</p>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <div className="flex shrink-0 items-center rounded-lg bg-white shadow-sm ring-1 ring-neutral-100">
+                        <motion.button
+                          type="button"
+                          onClick={() => onUpdateRewardQuantity(r.rewardId, -1)}
+                          whileTap={{ scale: 0.9 }}
+                          className="flex h-8 w-8 shrink-0 items-center justify-center text-neutral-600"
+                        >
+                          <FiMinus className="h-3.5 w-3.5" />
+                        </motion.button>
+                        <span className="min-w-7 text-center text-xs font-bold">{r.quantity}</span>
+                        <motion.button
+                          type="button"
+                          onClick={() => onUpdateRewardQuantity(r.rewardId, 1)}
+                          whileTap={{ scale: 0.9 }}
+                          className="flex h-8 w-8 shrink-0 items-center justify-center text-neutral-600"
+                        >
+                          <FiPlus className="h-3.5 w-3.5" />
+                        </motion.button>
+                      </div>
+                      <motion.button
+                        type="button"
+                        onClick={() => onRemoveReward(r.rewardId)}
+                        whileTap={{ scale: 0.9 }}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-500"
+                        aria-label="Remover"
+                      >
+                        <FiTrash2 className="h-3.5 w-3.5" />
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.li>
+              ))}
             </AnimatePresence>
           </ul>
-          <div className={`mt-4 shrink-0 space-y-3 border-t pt-4 ${isDrawer ? "border-neutral-200" : "border-neutral-100"}`}>
-            {deliveryFee != null && deliveryFee > 0 && (
+
+          <div className="mt-4 shrink-0 space-y-3 border-t pt-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-neutral-600">Telefone</label>
+              <input
+                type="tel"
+                value={
+                  phone.length === 0
+                    ? ""
+                    : phone.length <= 2
+                      ? `(${phone}`
+                      : phone.length <= 7
+                        ? `(${phone.slice(0, 2)}) ${phone.slice(2)}`
+                        : `(${phone.slice(0, 2)}) ${phone.slice(2, 7)}-${phone.slice(7)}`
+                }
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, "").slice(0, 11);
+                  setPhone(v);
+                }}
+                placeholder="(00) 00000-0000"
+                className="w-full rounded-lg border-0 bg-neutral-50 py-2.5 px-3 text-sm text-neutral-900 ring-1 ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-[var(--theme-primary)]/30"
+              />
+              {rewardItems.length > 0 && phone.replace(/\D/g, "").length >= 10 && (
+                <p className="text-xs font-medium">
+                  {loyaltyLoading ? (
+                    <span className="text-neutral-500">Verificando pontos...</span>
+                  ) : hasInsufficientPoints ? (
+                    <span className="text-red-600">
+                      Pontos insuficientes. Você tem {points}, necessário {requiredPoints} pts
+                    </span>
+                  ) : (
+                    <span className="text-[var(--theme-primary)]">
+                      Você tem {points} pontos (necessário {requiredPoints} pts)
+                    </span>
+                  )}
+                </p>
+              )}
+              {isExisting && points > 0 && rewardItems.length === 0 && (
+                <p className="text-xs text-[var(--theme-primary)] font-medium">
+                  Você tem {points} pontos
+                </p>
+              )}
+            </div>
+
+            {!isExisting && phone.length >= 10 && (
+              <div>
+                <label className="block text-xs font-medium text-neutral-600">Seu nome</label>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Como podemos te chamar?"
+                  className="mt-1 w-full rounded-lg border-0 bg-neutral-50 py-2.5 px-3 text-sm text-neutral-900 ring-1 ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-[var(--theme-primary)]/30"
+                />
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => {
+                  setCouponCode(e.target.value);
+                  validateCoupon.reset();
+                }}
+                placeholder="Cupom de desconto"
+                className="flex-1 rounded-lg border-0 bg-neutral-50 py-2.5 px-3 text-sm text-neutral-900 ring-1 ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-[var(--theme-primary)]/30"
+              />
+              <button
+                type="button"
+                onClick={handleValidateCoupon}
+                disabled={!couponCode.trim() || validateCoupon.isPending}
+                className="shrink-0 rounded-lg bg-neutral-200 px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-300 disabled:opacity-50"
+              >
+                {validateCoupon.isPending ? "..." : "OK"}
+              </button>
+            </div>
+            {validateCoupon.isError && (
+              <p className="text-xs text-red-600">
+                {(validateCoupon.error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+                  "Cupom inválido"}
+              </p>
+            )}
+            {validateCoupon.data?.valid === false && validateCoupon.data?.message && (
+              <p className="text-xs text-red-600">{validateCoupon.data.message}</p>
+            )}
+            {validateCoupon.data?.valid && (
+              <p className="text-xs font-medium text-green-600">
+                Desconto de R$ {validateCoupon.data.discount.toFixed(2).replace(".", ",")} aplicado
+              </p>
+            )}
+
+            <div className={`space-y-2 ${isDrawer ? "border-neutral-200" : "border-neutral-100"}`}>
+            {deliveryFee != null && Number(deliveryFee) > 0 && (
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium text-neutral-600">Taxa de entrega</span>
                 <span className="font-semibold text-neutral-900">
-                  R$ {deliveryFee.toFixed(2).replace(".", ",")}
+                  R$ {Number(deliveryFee).toFixed(2).replace(".", ",")}
                 </span>
               </div>
             )}
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-neutral-600">Total</span>
-              <span className="text-lg font-bold text-neutral-900">
-                R$ {total.toFixed(2).replace(".", ",")}
-              </span>
+              {couponDiscount > 0 && (
+                <div className="flex items-center justify-between text-sm text-green-600">
+                  <span className="font-medium">Desconto</span>
+                  <span className="font-semibold">-R$ {couponDiscount.toFixed(2).replace(".", ",")}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-neutral-600">Total</span>
+                <span className="text-lg font-bold text-neutral-900">
+                  R$ {totalBeforePoints.toFixed(2).replace(".", ",")}
+                </span>
+              </div>
             </div>
+
             <motion.button
               type="button"
               onClick={() => setShowAddressForm(true)}
+              disabled={
+                phone.replace(/\D/g, "").length < 10 ||
+                (rewardItems.length > 0 && (loyaltyLoading || points < requiredPoints))
+              }
               whileTap={{ scale: 0.98 }}
               whileHover={{ scale: 1.01 }}
-              className={`flex w-full items-center justify-center gap-2 text-sm font-semibold text-white transition-all ${isDrawer ? "rounded-xl bg-[var(--theme-whatsapp)] py-3 shadow-md shadow-green-500/20" : "rounded-xl bg-[var(--theme-whatsapp)] py-3.5 shadow-md shadow-green-500/20 hover:shadow-lg hover:shadow-green-500/25"}`}
+              className={`flex w-full items-center justify-center gap-2 text-sm font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isDrawer ? "rounded-xl bg-[var(--theme-whatsapp)] py-3 shadow-md shadow-green-500/20" : "rounded-xl bg-[var(--theme-whatsapp)] py-3.5 shadow-md shadow-green-500/20 hover:shadow-lg hover:shadow-green-500/25"}`}
             >
               Finalizar pedido
             </motion.button>
@@ -308,20 +591,6 @@ export function Cart({
       )}
     </>
   );
-
-  const handleAddressSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const msg = buildWhatsAppMessage(items, productsTotal, restaurantName, address, deliveryFee);
-    window.open(
-      `https://wa.me/${whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`,
-      "_blank",
-      "noopener,noreferrer"
-    );
-    setShowAddressForm(false);
-    setAddress(initialAddress);
-    setCepError(null);
-    onClose?.();
-  };
 
   const addressModal = (
     <AnimatePresence>
@@ -478,12 +747,25 @@ export function Cart({
                   </button>
                   <button
                     type="submit"
-                    className="flex text-sm flex-1 items-center justify-center gap-1.5 rounded-lg bg-[var(--theme-whatsapp)] px-3 py-2.5 font-semibold text-white shadow-md shadow-green-500/20 transition-all hover:shadow-green-500/25 active:scale-[0.98]"
+                    disabled={createOrder.isPending}
+                    className="flex text-sm flex-1 items-center justify-center gap-1.5 rounded-lg bg-[var(--theme-whatsapp)] px-3 py-2.5 font-semibold text-white shadow-md shadow-green-500/20 transition-all hover:shadow-green-500/25 active:scale-[0.98] disabled:opacity-70"
                   >
-                    <FiMessageCircle className="h-4 w-4" />
-                    Enviar no WhatsApp
+                    {createOrder.isPending ? (
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    ) : (
+                      <>
+                        <FiMessageCircle className="h-4 w-4" />
+                        Enviar no WhatsApp
+                      </>
+                    )}
                   </button>
                 </div>
+                {createOrder.isError && (
+                  <p className="text-center text-sm text-red-600">
+                    {(createOrder.error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+                      "Erro ao criar pedido. Tente novamente."}
+                  </p>
+                )}
               </form>
             </div>
           </motion.div>

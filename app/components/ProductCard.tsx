@@ -1,10 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { FiPlus } from "react-icons/fi";
-import { getProductImages } from "@/app/lib/productImages";
+import { ProductImage } from "@/app/components/ProductImage";
+import { getProductImage } from "@/app/lib/productImages";
 import type { Product } from "@/app/types";
+import { getEffectivePrice } from "@/app/types";
 
 interface ProductCardProps {
   product: Product;
@@ -27,14 +28,17 @@ export function ProductCard({ product, onAdd, onDetail, index = 0, priority = fa
       className={`group flex flex-col overflow-hidden rounded-2xl border border-[var(--theme-secondary-soft)] bg-white shadow-sm transition-shadow hover:shadow-md hover:border-[var(--theme-secondary)] ${onDetail ? "cursor-pointer" : ""}`}
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-[var(--theme-secondary-soft)]">
-        <Image
-          src={getProductImages(product)[0]}
+        {product.onSale && (
+          <span className="absolute left-2 top-2 z-[1] rounded-lg bg-[var(--theme-primary)] px-2 py-0.5 text-xs font-bold text-white shadow-sm">
+            Promoção
+          </span>
+        )}
+        <ProductImage
+          src={getProductImage(product)}
           alt={product.name}
-          fill
-          priority={priority}
-          fetchPriority={priority ? "high" : undefined}
           className="object-cover transition-transform duration-300 group-hover:scale-105"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          priority={priority}
         />
       </div>
       <div className="flex flex-1 flex-col p-4 sm:p-5">
@@ -44,10 +48,23 @@ export function ProductCard({ product, onAdd, onDetail, index = 0, priority = fa
         <p className="mt-1 line-clamp-2 text-sm text-[var(--theme-foreground-muted)]">
           {product.description}
         </p>
-        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-4">
-          <span className="text-base font-bold text-[var(--theme-primary)] sm:text-lg">
-            R$ {product.price.toFixed(2).replace(".", ",")}
-          </span>
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-2 pt-4">
+          <div className="flex flex-col gap-0.5">
+            {product.onSale && product.discountPrice != null ? (
+              <>
+                <span className="text-xs text-neutral-400 line-through">
+                  R$ {product.price.toFixed(2).replace(".", ",")}
+                </span>
+                <span className="text-base font-bold text-[var(--theme-primary)] sm:text-lg">
+                  R$ {getEffectivePrice(product).toFixed(2).replace(".", ",")}
+                </span>
+              </>
+            ) : (
+              <span className="text-base font-bold text-[var(--theme-primary)] sm:text-lg">
+                R$ {getEffectivePrice(product).toFixed(2).replace(".", ",")}
+              </span>
+            )}
+          </div>
           <motion.button
             type="button"
             onClick={(e) => {

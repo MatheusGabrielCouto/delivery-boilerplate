@@ -1,52 +1,76 @@
 # Cardápio Online - Boilerplate
 
-Site de pedidos online para restaurantes. Cadastre produtos e categorias de forma estática via JSON.
+Boilerplate de cardápio digital para restaurantes e delivery. Integrado com API NestJS para menu dinâmico, programa de fidelidade, cupons e pedidos.
+
+## Sobre o projeto
+
+Projeto voltado para pequenos negócios que precisam de um cardápio online com backend. Consome a API de delivery para exibir produtos, validar cupons, gerenciar pontos de fidelidade e criar pedidos. Após o pedido, abre o WhatsApp com a mensagem formatada.
+
+## Funcionalidades
+
+- **Cardápio dinâmico** — Categorias e produtos vindos da API (`GET /menu`)
+- **Programa de fidelidade** — Busca cliente por telefone, exibe saldo de pontos
+- **Cupom de desconto** — Validação em tempo real (`POST /coupons/validate`)
+- **Loja de recompensas** — Troca de pontos por itens (`GET /rewards`)
+- **Pedido via API** — `POST /orders` substitui envio direto ao WhatsApp
+- **WhatsApp** — Após criar pedido, gera mensagem e abre link
+
+## Stack
+
+- **Next.js 16** (App Router)
+- **React 19**
+- **TypeScript**
+- **Tailwind CSS 4**
+- **React Query (TanStack Query)**
+- **Axios**
+- **Framer Motion** — Animações
+- **Embla Carousel** — Carrossel de imagens
+
+## Configuração
+
+Crie `.env.local`:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:4000
+NEXT_PUBLIC_RESTAURANT_ID=seu-restaurant-id
+```
+
+- **NEXT_PUBLIC_API_URL** — URL da API NestJS
+- **NEXT_PUBLIC_RESTAURANT_ID** — ID do restaurante (header `x-restaurant-id`)
 
 ## Início rápido
 
 ```bash
+pnpm install
 pnpm dev
 ```
 
-Acesse [http://localhost:3000](http://localhost:3000).
+Acesse [http://localhost:3000](http://localhost:3000). A API deve estar rodando na URL configurada.
 
-## Cadastro de produtos
+## API esperada
 
-Edite o arquivo `data/products.json` para cadastrar:
+| Método | Endpoint | Descrição |
+|--------|----------|------------|
+| GET | `/menu` | Categorias e produtos |
+| GET | `/customers/:phone` | Buscar cliente por telefone |
+| GET | `/loyalty/balance/:phone` | Saldo de pontos |
+| POST | `/coupons/validate` | Validar cupom `{ code, orderValue }` |
+| GET | `/rewards` | Lista de recompensas |
+| POST | `/orders` | Criar pedido |
 
-- **restaurant**: Nome e descrição do restaurante
-- **categories**: Categorias do cardápio (Bebidas, Lanches, etc.)
-- **products**: Produtos com nome, descrição, preço, imagem e categoria
+## Estrutura do projeto
 
-Veja a documentação completa em `data/README.md`.
-
-### Exemplo de produto
-
-```json
-{
-  "id": "x-burger",
-  "name": "X-Burger",
-  "description": "Hambúrguer artesanal com queijo",
-  "price": 18.00,
-  "image": "/products/xburger.png",
-  "categoryId": "lanches",
-  "available": true
-}
+```
+├── app/
+│   ├── components/
+│   ├── hooks/          # useMenu, useCustomer, useLoyalty, useRewards, useCreateOrder
+│   ├── services/       # Client Axios + funções de API
+│   ├── types/
+│   └── ...
+└── package.json
 ```
 
-Imagens: coloque em `public/products/` e use o caminho `/products/nome.png` no JSON.
+## Extras
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Telefone persistido em `localStorage` para pré-preenchimento
+- Header `Authorization: Bearer` quando houver token (preparado para login futuro)

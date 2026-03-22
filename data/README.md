@@ -20,7 +20,8 @@ Edite o arquivo `products.json` para cadastrar seus produtos de forma estática.
     "name": "Nome do Restaurante",
     "description": "Descrição exibida no header",
     "whatsapp": "5511999999999",
-    "icon": "/logo.svg"
+    "icon": "/logo.svg",
+    "deliveryFee": 5.00
   },
   "footer": {
     "copyright": "Todos os direitos reservados"
@@ -65,6 +66,7 @@ Edite o arquivo `products.json` para cadastrar seus produtos de forma estática.
 - **restaurant**: Dados do restaurante (nome, descrição, whatsapp e icon)
   - **whatsapp**: Número com DDD e país, só dígitos (ex: 5511999999999)
   - **icon** (opcional): Caminho do ícone/logo (ex: /logo.png ou /logo.svg)
+  - **deliveryFee** (opcional): Taxa de entrega em reais. Omita ou use 0 para não cobrar.
 - **footer** (opcional): Rodapé da página
   - **copyright**: Texto de direitos reservados (ex: "Todos os direitos reservados")
 - **categories**: Lista de categorias. O campo `order` define a ordem de exibição

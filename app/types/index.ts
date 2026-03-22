@@ -20,10 +20,16 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  discountPrice?: number;
+  onSale?: boolean;
   image: string;
   images?: string[];
   categoryId: string;
   available: boolean;
+}
+
+export function getEffectivePrice(product: Product): number {
+  return product.onSale && product.discountPrice != null ? product.discountPrice : product.price;
 }
 
 export interface Restaurant {
@@ -48,5 +54,12 @@ export interface MenuData {
 
 export interface CartItem {
   product: Product;
+  quantity: number;
+}
+
+export interface CartRewardItem {
+  rewardId: string;
+  name: string;
+  pointsCost: number;
   quantity: number;
 }
