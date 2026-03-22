@@ -64,7 +64,7 @@ function buildCategorySections(data: Record<string, unknown>): { category: Categ
 export function useMenu() {
   const query = useQuery<MenuResponse | undefined>({
     queryKey: ["menu"],
-    queryFn: async () => getMenuAction() ?? undefined,
+    queryFn: async () => (await getMenuAction()) ?? undefined,
     staleTime: 0,
     refetchInterval: 60 * 1000,
     refetchOnWindowFocus: true,

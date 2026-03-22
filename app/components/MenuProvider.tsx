@@ -3,6 +3,7 @@
 import { ThemeProvider } from "@/app/components/ThemeProvider";
 import { ImagePreloader } from "@/app/components/ImagePreloader";
 import { useMenu } from "@/app/hooks/useMenu";
+import type { MenuResponse } from "@/app/types/api";
 
 function pickTheme(menu: Record<string, unknown> | null | undefined) {
   return (
@@ -14,7 +15,8 @@ function pickTheme(menu: Record<string, unknown> | null | undefined) {
 }
 
 export function MenuProvider({ children }: { children: React.ReactNode }) {
-  const { data: menu } = useMenu();
+  const { data } = useMenu();
+  const menu = data as MenuResponse | undefined;
   const theme = menu ? pickTheme(menu as unknown as Record<string, unknown>) : null;
 
   return (
