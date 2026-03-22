@@ -157,9 +157,9 @@ export default function Home() {
       </a>
       <header className="sticky top-0 z-30 shrink-0 w-full border-b border-neutral-200 bg-neutral-50/95 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
-          {restaurant?.icon && (
+          {(restaurant?.logo || restaurant?.icon) && (
             <img
-              src={restaurant.icon}
+              src={restaurant.logo ?? restaurant.icon}
               alt=""
               width={56}
               height={56}

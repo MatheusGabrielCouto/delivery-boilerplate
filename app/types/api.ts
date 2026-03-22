@@ -8,6 +8,7 @@ export interface MenuResponse {
     description: string;
     whatsapp: string;
     icon?: string;
+    logo?: string;
     deliveryFee?: number;
     businessHours?: BusinessHours;
     timezone?: string;

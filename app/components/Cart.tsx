@@ -24,7 +24,7 @@ import { useCreateOrder } from "@/app/hooks/useCreateOrder";
 import { useQueryClient } from "@tanstack/react-query";
 import type { CartItem, CartRewardItem } from "@/app/types";
 import { getEffectivePrice } from "@/app/types";
-import type { CreateOrderResponse } from "@/app/types/api";
+import type { CreateOrderPayload, CreateOrderResponse } from "@/app/types/api";
 
 interface AddressForm {
   cep: string;
@@ -242,18 +242,23 @@ export function Cart({
     if (digits.length < 10) return;
     if (rewardItems.length > 0 && (loyaltyLoading || points < requiredPoints)) return;
 
-    const orderPayload = {
+    const fullPhone = digits.length >= 12 ? digits : `55${digits}`;
+    const orderPayload: CreateOrderPayload = {
       customer: {
         name: customerName.trim() || "Cliente",
-        phone: digits,
+        phone: fullPhone,
       },
       items: items.map((i) => ({
-        productId: i.product.id,
-        quantity: i.quantity,
+        productId: String(i.product.id),
+        quantity: Number(i.quantity),
       })),
-      couponCode: validateCoupon.data?.valid ? couponCode.trim() : undefined,
-      rewards: rewardItems.flatMap((r) => Array(r.quantity).fill(r.rewardId)),
     };
+    if (validateCoupon.data?.valid && couponCode.trim()) {
+      orderPayload.couponCode = couponCode.trim();
+    }
+    if (rewardItems.length > 0) {
+      orderPayload.rewards = rewardItems.flatMap((r) => Array(r.quantity).fill(r.rewardId));
+    }
 
     try {
       const order = await createOrder.mutateAsync(orderPayload);

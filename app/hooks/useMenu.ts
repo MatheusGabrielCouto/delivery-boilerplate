@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { getMenuAction } from "@/app/actions/api";
 import type { MenuResponse } from "@/app/types/api";
 import type { BusinessHours, Category, Product } from "@/app/types";
 
@@ -63,8 +64,10 @@ function buildCategorySections(data: Record<string, unknown>): { category: Categ
 export function useMenu() {
   const query = useQuery<MenuResponse | undefined>({
     queryKey: ["menu"],
-    queryFn: () => Promise.reject(new Error("Menu deve ser carregado pelo servidor")),
-    staleTime: Infinity,
+    queryFn: async () => getMenuAction() ?? undefined,
+    staleTime: 0,
+    refetchInterval: 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   const categorySections = query.data
@@ -78,6 +81,7 @@ export function useMenu() {
         description: String(raw.description ?? ""),
         whatsapp: String(raw.whatsapp ?? ""),
         icon: raw.icon != null ? String(raw.icon) : undefined,
+        logo: raw.logo != null ? String(raw.logo) : undefined,
         deliveryFee: raw.deliveryFee != null ? Number(raw.deliveryFee) : undefined,
         businessHours: (raw.businessHours ?? raw.business_hours) as BusinessHours | undefined,
         timezone: (raw.timezone ?? raw.time_zone) as string | undefined,

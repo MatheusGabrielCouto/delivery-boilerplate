@@ -21,7 +21,7 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     <ThemeProvider theme={theme}>
       <ImagePreloader
         products={menu?.products ?? []}
-        restaurantIcon={menu?.restaurant?.icon}
+        restaurantIcon={menu?.restaurant?.logo ?? menu?.restaurant?.icon}
       >
         {children}
       </ImagePreloader>

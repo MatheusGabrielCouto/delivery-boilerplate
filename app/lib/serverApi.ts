@@ -90,11 +90,19 @@ export async function validateCoupon(payload: ValidateCouponPayload): Promise<Va
 }
 
 export async function createOrder(payload: CreateOrderPayload): Promise<CreateOrderResponse> {
+  const body: Record<string, unknown> = {
+    customer: payload.customer,
+    items: payload.items,
+  };
+  if (payload.couponCode) body.couponCode = payload.couponCode;
+  if (payload.pointsToUse != null) body.pointsToUse = payload.pointsToUse;
+  if (payload.rewards?.length) body.rewards = payload.rewards;
+
   const headers = await getAuthHeaders();
   const res = await fetch(`${getBaseUrl()}/orders`, {
     method: "POST",
     headers,
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.message ?? "Erro ao criar pedido");
